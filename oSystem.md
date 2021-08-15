@@ -796,7 +796,7 @@ int pipe(int fd[2]);
 
 共享内存的机制，就是 **拿出一块虚拟地址空间来，映射到相同的物理内存中**。这样这个进程写⼊的东⻄，另外⼀个进程⻢上就能看到了，都不需要拷⻉来拷⻉去，传来传去，⼤⼤提⾼了进程间通信的速度。
 
-![共享内存.PNG](https://i.loli.net/2021/08/05/7mG2ja1hdU4FfBu.png)
+<img src="https://i.loli.net/2021/08/05/7mG2ja1hdU4FfBu.png" alt="共享内存.PNG" style="zoom: 67%;" />
 
 #### 信号量
 
@@ -945,8 +945,7 @@ int socket(int domain, int type, int protocal)
 
 由于多线程执⾏操作共享变量的这段代码可能会导致竞争状态，因此我们将此段代码称为 **临界区（critical section）**，即 **访问共享资源的代码⽚段**，⼀定不能给多线程同时执⾏。
 
-我们希望这段代码是 **互斥（mutualexclusion）**的，即保证 **⼀个线程在临界区执行时，其他线程应该
-被阻⽌进⼊临界区**。
+我们希望这段代码是 **互斥（mutualexclusion）**的，即保证 **⼀个线程在临界区执行时，其他线程应该被阻⽌进⼊临界区**。
 
 ![互斥.PNG](https://i.loli.net/2021/08/05/JsBKbHZqINmogpx.png)
 
@@ -1044,7 +1043,7 @@ void lock(lock_t *lock) {
 
 void unlock(lock_t *lock) {
     if(lock->q != nullptr) {
-        // 移处等待队列的队头元素；
+        // 移出等待队列的队头元素；
         // 将该线程的 TCB 插入到就绪队列；
         // 设置该线程为就绪状态；
     }
@@ -1061,7 +1060,7 @@ void unlock(lock_t *lock) {
 
 ``` c
 // 信号量数据结构
-type struect sem_t {
+type struct sem_t {
     int sem;	// 资源个数
     queue_t *q; // 等待队列
 }sem_t;
