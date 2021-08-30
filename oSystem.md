@@ -1620,6 +1620,70 @@ void reader() {
 
 对于多线程程序来说，同步是指在一定的时间内只允许某一个线程访问某个资源 而在此时间内，不允许其他的线程访问该资源。可以通过 **互斥锁（ mutex ）**、**条件变量（ condition variable ）**、**读写锁（reader-writer lock ）**和 **信号量（ emphore ）**来同步资源。
 
+#### 互斥锁与条件变量
+
+``` c++
+#include <iostream>
+#include <queue>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+
+std::mutex mutex;
+std::condition_variable cv_produce, cv_consume;
+std::queue<int> buffer;
+const int MAX_SIZE = 20;
+
+void consumer()
+{
+    while (true)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+        std::unique_lock<std::mutex> lock(mutex);
+        // 防止虚假唤醒，也可以使用while判断
+        cv_consume.wait(lock, []()
+                     { return !buffer.empty(); });
+        std::cout << "consumer " << std::this_thread::get_id() << " consume:";
+        int n = buffer.front();
+        buffer.pop();
+        std::cout << n << ", remain size:" << buffer.size() << std::endl;
+        cv_produce.notify_all(); // 此处为生产者通知
+    }
+}
+
+void producer(int id)
+{
+    while (true)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        std::unique_lock<std::mutex> lock(mutex);
+        // 防止虚假唤醒，也可以使用while判断
+        cv_produce.wait(lock, []()
+                     { return buffer.size() < MAX_SIZE; });
+        std::cout << "producer " << std::this_thread::get_id() << " produce:";
+        buffer.push(id);
+        std::cout << id << ", remain size:" << buffer.size() << std::endl;
+        cv_consume.notify_all(); // 此处为消费者通知
+    }
+}
+
+int main(int argc, char const *argv[])
+{
+    std::vector<std::thread> consumer_threads(2), producer_threads(2);
+    for (int i = 0; i < 2; ++i)
+    {
+        consumer_threads[i] = std::thread(consumer);
+        producer_threads[i] = std::thread(producer, i + 1);
+    }
+    for (int i = 0; i < 2; ++i)
+    {
+        consumer_threads[i].join();
+        producer_threads[i].join();
+    }
+    return 0;
+}
+```
+
 ### 多线程重入
 
 各种同步方式，其实都是为了解决“函数不可重入”的问题。所谓 **可重入函数**，是指 **可以由多于一个任务并发使用，而不必担心数据错误的函数**。相反，“不可重入函数” 则是只能由一个任务所占用，除非能确保函数的互斥（或者使用信号量，或者在代码的关键部分禁用中断）。可重入函数可以在任意时刻被中断，稍后再继续运行，且不会丢失数据。可重入函数要在使用本地变量或在使用全局变量时保护自己的数据。
